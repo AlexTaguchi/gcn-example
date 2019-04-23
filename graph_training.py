@@ -102,7 +102,7 @@ class Net(torch.nn.Module):
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
 
-        # Average node latent representations
+        # Average hidden node representations
         x = scatter_mean(x, batch.batch, dim=0)
 
         # Multilayer perceptron
