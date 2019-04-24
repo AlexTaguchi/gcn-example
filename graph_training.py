@@ -53,35 +53,34 @@ class MyGCNConv(MessagePassing):
     def __init__(self, in_channels, out_channels, edge_channels):
         super(MyGCNConv, self).__init__(aggr='mean')
         self.lin1 = torch.nn.Linear(in_channels, out_channels)
-        self.lin2 = torch.nn.Linear(in_channels, out_channels, bias=False)
-        self.lin3 = torch.nn.Linear(edge_channels, out_channels, bias=False)
+        self.lin2 = torch.nn.Linear(in_channels + edge_channels, out_channels, bias=False)
 
     def forward(self, x, edge_index, edge_attr):
         # x = [nodes, in_channels]
         # edge_index = [2, directed edges]
 
-        # Linear transformation of central node feature matrix
-        x_i = self.lin1(x)
-
-        # Linear transformation of neighbor node feature matrix
-        x_j = self.lin2(x)
+        # Linearly transform center node feature matrix
+        center = self.lin1(x)
 
         # Propagate messages
-        return self.propagate(edge_index, x=x_j, edge_attr=edge_attr, center=x_i)
+        return self.propagate(edge_index, x=x, edge_attr=edge_attr, center=center)
 
     def message(self, x_j, edge_index, edge_attr):
         # x_j = [directed edges, out_channels]
 
-        # Add linearly transformed edge features to node features
-        x_j += self.lin3(edge_attr)
+        # Concatenate node and edge features
+        neighbors = torch.cat((x_j, edge_attr), dim=1)
+
+        # Linearly transform neighboring node and edge features
+        neighbors = self.lin2(neighbors)
 
         # Normalize neighbor features
         row, col = edge_index
-        deg = degree(row, dtype=x_j.dtype)
+        deg = degree(row, dtype=neighbors.dtype)
         deg_inv_sqrt = deg.pow(-0.5)
         norm = deg_inv_sqrt[row] * deg_inv_sqrt[col]
 
-        return norm.view(-1, 1) * x_j
+        return norm.view(-1, 1) * neighbors
 
     def update(self, aggr_out, center):
         # aggr_out = [nodes, out_channels]
