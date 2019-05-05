@@ -39,3 +39,4 @@ Solution from https://github.com/rusty1s/pytorch_scatter/issues/21:
 MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ pip install torch-scatter
 MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ pip install torch-cluster
 ```
+Also, update to the most recent version of PyTorch if problems persist
